@@ -183,7 +183,7 @@ function ManageProducts() {
           {!baseProducts.length ? (<div>
             <h2 className="text-secondary">There is nothing in here</h2>
           </div>) : null}
-          {!products.length ? (<div>
+          {!products.length && baseProducts.length ? (<div>
             <h2 className="text-secondary">Nothing matches your search</h2>
           </div>) : null}
           {products.map(({

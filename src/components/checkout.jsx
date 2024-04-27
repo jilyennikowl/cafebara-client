@@ -1,6 +1,6 @@
 
 import axios from 'axios';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Button, Row, Col, Form, ToastContainer, Toast } from 'react-bootstrap';
 import genPDF from '../utils/genPDF';
 
@@ -11,14 +11,28 @@ function Checkout(props) {
     setShowSuccess,
     setProductsAddedToCart,
     setAddedToCart,
-    products
+    setOrderCode,
+    products,
+    orderData,
   } = props
-  const cartData = products.map((p) => {
+
+  // for payment modal
+  const [customerName, setCustomerName] = useState('')
+  const [customerAddress, setCustomerAddress] = useState('')
+  const [cashierName, setCashierName] = useState('')
+  const [transactionCode, setTransactionCode] = useState(null)
+  const [printReceipt, setPrintReceipt] = useState(true)
+  const [showP, setShowP] = useState(false);
+  const [showAPIError, setShowAPIError] = useState(false);
+  const [APIError, setAPIError] = useState('')
+
+  let cartData = products.map((p) => {
     return {
       ...p,
       quantity: 1,
     }
   })
+
   const [cart, setCart] = useState(cartData)
   const setQuantity = (c, id) => {
     setCart((items) => {
@@ -27,18 +41,32 @@ function Checkout(props) {
       return items
     })
   }
+
+  useEffect(() => {
+    if (orderData) {
+      const c = orderData.items.map((p) => {
+        return {
+          ...p.product,
+          quantity: p.quantity
+        }
+      })
+      setCart(c)
+      setTransactionCode(orderData.transactionCode)
+      setCustomerAddress(orderData.metadata.customerAddress)
+      setCustomerName(orderData.metadata.customerName)
+      setShowP(true)
+    }
+  }, [orderData])
+
   const handleClose = () => setCheckoutShown(false);
 
-  // for payment modal
-  const [customerName, setCustomerName] = useState('')
-  const [customerAddress, setCustomerAddress] = useState('')
-  const [cashierName, setCashierName] = useState('')
-  const [printReceipt, setPrintReceipt] = useState(true)
-  const [showP, setShowP] = useState(false);
-  const [showAPIError, setShowAPIError] = useState(false);
-  const [APIError, setAPIError] = useState('')
-
-  const handleCloseP = () => setShowP(false)
+  const handleCloseP = () => {
+    if (orderData) {
+      setOrderCode('')
+      setCheckoutShown(false)
+    }
+    setShowP(false)
+  }
   const handleShowP = () => setShowP(true)
 
   const handleSubmit = () => {
@@ -78,7 +106,9 @@ function Checkout(props) {
         customerName,
         customerAddress,
         cashierName,
-      }
+      },
+      isPaid: true,
+      transactionCode,
     }
     axios.post(
       `${process.env.REACT_APP_API_HOST}/transactions`,
@@ -90,6 +120,7 @@ function Checkout(props) {
       }
     )
     .then((response) => {
+      setOrderCode('')
       setAddedToCart(0)
       setCheckoutShown(false)
       setShowP(false)

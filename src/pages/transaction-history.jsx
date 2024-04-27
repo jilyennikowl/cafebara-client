@@ -49,6 +49,7 @@ function TransactionHistory() {
             metadata,
             items,
             createdAt,
+            transactionCode
           }, i) => (
             <Card 
               bg={parseInt(i) % 2 === 0 ? 'dark' : 'light'}
@@ -60,7 +61,8 @@ function TransactionHistory() {
                   <Col sm={5} md={4}>
                     <span className='text-secondary'>Customer:</span> {metadata.customerName} <br />
                     <span className='text-secondary'>Address:</span> {metadata.customerAddress} <br />
-                    <span className='text-secondary'>Cashier:</span> {metadata.cashierName}
+                    <span className='text-secondary'>Cashier:</span> {metadata.cashierName} <br />
+                    <span className='text-secondary'>Transaction Reference:</span> {transactionCode.toLocaleUpperCase()}
                   </Col>
                   <Col sm={7} md={4}>
                     <span className='text-secondary'>Items:</span> <br />

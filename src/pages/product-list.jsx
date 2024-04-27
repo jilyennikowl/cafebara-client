@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { CartFill, CartPlusFill, CartDashFill, ExclamationCircleFill, Search } from "react-bootstrap-icons";
+import { CartFill, CartPlusFill, CartDashFill, ExclamationCircleFill, Search, ArrowRight } from "react-bootstrap-icons";
 import Navigation from "../components/navbar";
 import { Container, Row, Col, Card, Button, Badge, ToastContainer, Toast, InputGroup, Form, Modal } from "react-bootstrap";
 import axios from "axios";
@@ -17,6 +17,11 @@ function ProductList() {
   const [checkoutShown, setCheckoutShown] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [search, setSearch] = useState('')
+  const [orderData, setOrderData] = useState(null)
+  const [orderCode, setOrderCode] = useState('')
+  const [findOrderBtnDisabled, setFindOrderBtnDisabled] = useState(true)
+  const [showAPIError, setShowAPIError] = useState(false);
+  const [APIError, setAPIError] = useState('')
 
   const [showI, setShowI] = useState(false);
   const [showIProduct, setShowIProduct] = useState(null)
@@ -28,6 +33,15 @@ function ProductList() {
     setShowIProduct(p)
     setShowI(true)
   }
+
+  useEffect(() => {
+    if (orderCode.length) {
+      setFindOrderBtnDisabled(false)
+    }
+    else {
+      setFindOrderBtnDisabled(true)
+    }
+  }, [orderCode])
 
   useEffect(() => {
     const auth = async () => {
@@ -84,7 +98,30 @@ function ProductList() {
     setAddedToCart(addedToCart + 1)
   }
 
-  const showCheckout = () => setCheckoutShown(true);
+  const handleGetOrder = () => {
+    axios.get(
+      `${process.env.REACT_APP_API_HOST}/transactions/${orderCode}`,
+      {
+        headers: {
+          access_token: localStorage.getItem('access_token'),
+        }
+      }
+    )
+    .then((response) => {
+      setOrderData(response.data)
+      setCheckoutShown(true)
+    })
+    .catch((error) => {
+      setAPIError(error.response.data.message)
+      setShowAPIError(true)
+    })
+  }
+
+  const showCheckout = () => {
+    setOrderCode('')
+    setOrderData(null)
+    setCheckoutShown(true)
+  }
 
   return (
     <div className="ProductList">
@@ -92,8 +129,24 @@ function ProductList() {
       <Container>
         <div style={{marginTop: '40px'}}>
           <Row>
-            <Col xs={12} md={8}>
+            <Col xs={12} md={4}>
               <h3 style={{marginBottom: '20px'}}>Products</h3>
+            </Col>
+            <Col xs={12} md={4}>
+              <InputGroup className="mb-3">
+                <Form.Control
+                  placeholder="Order Code"
+                  aria-label="Order Code"
+                  aria-describedby="basic-addon2"
+                  value={orderCode}
+                  onChange={e => setOrderCode(e.target.value)}
+                />
+                <Button disabled={findOrderBtnDisabled} onClick={handleGetOrder} variant="primary" id="button-addon2">
+                  <ArrowRight
+                    style={{cursor: 'pointer'}}
+                    className="text-light" size={20} />
+                </Button>
+              </InputGroup>
             </Col>
             <Col xs={12} md={4}>
               <InputGroup className="mb-3">
@@ -115,7 +168,7 @@ function ProductList() {
         {!baseProducts.length ? (<div>
           <h2 className="text-secondary">There is nothing in here</h2>
         </div>) : null}
-        {!products.length ? (<div>
+        {!products.length && baseProducts.length ? (<div>
           <h2 className="text-secondary">Nothing matches your search</h2>
         </div>) : null}
         <Row>
@@ -203,7 +256,9 @@ function ProductList() {
         setProductsAddedToCart={setProductsAddedToCart}
         setShowSuccess={setShowSuccess}
         setAddedToCart={setAddedToCart}
-        products={productsAddedToCart} /> : null}
+        products={productsAddedToCart}
+        setOrderCode={setOrderCode}
+        orderData={orderData} /> : null}
 
       <ToastContainer position='bottom-end' style={{position: 'fixed', padding: '20px'}}>
         <Toast bg="success" onClose={() => setShowSuccess(false)} show={showSuccess} delay={5000} autohide>
@@ -211,6 +266,16 @@ function ProductList() {
             <strong className="me-auto">Info</strong>
           </Toast.Header>
           <Toast.Body className="text-white">Transaction Completed</Toast.Body>
+        </Toast>
+      </ToastContainer>
+
+
+      <ToastContainer position='bottom-end' style={{position: 'fixed', padding: '20px'}}>
+        <Toast bg="danger" onClose={() => setShowAPIError(false)} show={showAPIError} delay={5000} autohide>
+          <Toast.Header>
+            <strong className="me-auto">Alert!</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{APIError}</Toast.Body>
         </Toast>
       </ToastContainer>
 
