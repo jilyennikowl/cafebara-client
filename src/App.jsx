@@ -10,7 +10,7 @@ import ManageProducts from './pages/manage-products';
 
 function App() {
   return (
-    <Router>
+    <Router basename={`${process.env.PUBLIC_URL}`}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/products" element={<ProductList />} />
